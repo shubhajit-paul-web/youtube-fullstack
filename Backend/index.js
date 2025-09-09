@@ -2,7 +2,9 @@ import dotenv from "dotenv";
 import connectDB from "./src/db/db.js";
 import app from "./src/app.js";
 
-dotenv.config();
+dotenv.config({
+    path: "./env",
+});
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
