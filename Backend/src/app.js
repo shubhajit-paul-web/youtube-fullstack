@@ -4,7 +4,7 @@ import cors from "cors";
 
 const app = express();
 
-// middlewares
+// build-in middlewares
 app.use(
     express.json({
         limit: "20kb",
@@ -18,5 +18,10 @@ app.use(
         credentials: true,
     })
 );
+
+// Routes
+import authRoutes from "./routes/auth.routes.js";
+
+app.use("/api/v1/auth", authRoutes);
 
 export default app;

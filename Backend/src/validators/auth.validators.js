@@ -1,0 +1,38 @@
+import { body } from "express-validator";
+
+// Register validator
+export const registerValidator = [
+    body("username")
+        .notEmpty()
+        .withMessage("Username is required")
+        .isLength({ min: 3, max: 20 })
+        .withMessage("Username must be 3-20 characters")
+        .matches(/^[a-zA-Z0-9_]+$/)
+        .withMessage("Username can only contain letters, numbers, and underscores")
+        .trim(),
+    body("email")
+        .notEmpty()
+        .withMessage("Email is required")
+        .isEmail()
+        .withMessage("Please provide a valid email id")
+        .trim(),
+    body("fullName.firstName")
+        .notEmpty()
+        .withMessage("First name is required")
+        .matches(/^[A-Za-z]+$/)
+        .withMessage("First name must contain only letters")
+        .trim(),
+    body("fullName.lastName")
+        .optional()
+        .matches(/^[A-Za-z]+$/)
+        .withMessage("Last name must contain only letters")
+        .trim(),
+    body("password")
+        .notEmpty()
+        .withMessage("Password is required")
+        .isStrongPassword({ minSymbols: 0 })
+        .withMessage(
+            "Weak password: must be at least 8 chars, include uppercase, lowercase & number"
+        )
+        .trim(),
+];
