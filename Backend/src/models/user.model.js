@@ -1,4 +1,4 @@
-import { Schema, Model } from "mongoose";
+import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -60,7 +60,7 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function (next) {
-    if (!this.isModified(this.password)) return next();
+    if (!this.isModified("password")) return next();
 
     try {
         this.password = await bcrypt.hash(this.password, 10);
@@ -90,5 +90,5 @@ userSchema.methods.generateRefreshToken = function () {
     });
 };
 
-const User = Model("User", userSchema);
+const User = model("User", userSchema);
 export default User;

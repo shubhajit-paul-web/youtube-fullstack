@@ -6,12 +6,15 @@ import { validateRequest } from "../middlewares/validator.middleware.js";
 
 const router = Router();
 
-// POST /api/v1/auth/register
+// POST: /api/v1/auth/register
 router.post(
     "/register",
+    upload.fields([
+        { name: "avatar", maxCount: 1 },
+        { name: "coverImage", maxCount: 1 },
+    ]),
     registerValidator,
     validateRequest,
-    upload.fields([{ name: "avatar", maxCount: 1, name: "coverImage", maxCount: 1 }]),
     authControllers.register
 );
 

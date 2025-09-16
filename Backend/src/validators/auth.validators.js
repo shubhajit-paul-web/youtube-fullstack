@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import { capitalize } from "../utils/capitalize.js";
 
 // Register validator
 export const registerValidator = [
@@ -7,6 +8,7 @@ export const registerValidator = [
         .withMessage("Username is required")
         .isLength({ min: 3, max: 20 })
         .withMessage("Username must be 3-20 characters")
+        .toLowerCase()
         .matches(/^[a-zA-Z0-9_]+$/)
         .withMessage("Username can only contain letters, numbers, and underscores")
         .trim(),
@@ -16,17 +18,19 @@ export const registerValidator = [
         .isEmail()
         .withMessage("Please provide a valid email id")
         .trim(),
-    body("fullName.firstName")
+    body("firstName")
         .notEmpty()
         .withMessage("First name is required")
         .matches(/^[A-Za-z]+$/)
         .withMessage("First name must contain only letters")
-        .trim(),
-    body("fullName.lastName")
+        .trim()
+        .customSanitizer(capitalize),
+    body("lastName")
         .optional()
         .matches(/^[A-Za-z]+$/)
         .withMessage("Last name must contain only letters")
-        .trim(),
+        .trim()
+        .customSanitizer(capitalize),
     body("password")
         .notEmpty()
         .withMessage("Password is required")

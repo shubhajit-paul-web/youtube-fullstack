@@ -1,6 +1,6 @@
 import { validationResult } from "express-validator";
 import { StatusCodes } from "http-status-codes";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 export function validateRequest(req, res, next) {
     const errors = validationResult(req);

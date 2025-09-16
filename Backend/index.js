@@ -1,10 +1,6 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import connectDB from "./src/db/db.js";
 import app from "./src/app.js";
-
-dotenv.config({
-    path: "./env",
-});
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
@@ -21,7 +17,7 @@ process.on("unhandledRejection", (reason, promise) => {
 // Connect to DB and start the server
 (async () => {
     try {
-        const PORT = process.env.PORT || 3000;
+        const PORT = process.env.PORT || 8000;
 
         await connectDB();
 
