@@ -1,6 +1,8 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
+import { StatusCodes } from "http-status-codes";
 
 const userSchema = new Schema(
     {
@@ -59,6 +61,15 @@ const userSchema = new Schema(
     }
 );
 
+userSchema.set("toJSON", {
+    transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.refreshToken;
+        delete ret.__v;
+        return ret;
+    },
+});
+
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
 
@@ -66,7 +77,10 @@ userSchema.pre("save", async function (next) {
         this.password = await bcrypt.hash(this.password, 10);
         next();
     } catch (error) {
-        throw new Error(`Bcrypt hashing error: ${error.message}`);
+        throw new ApiError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "Unable to process password at the moment. Please try again."
+        );
     }
 });
 
@@ -74,7 +88,10 @@ userSchema.methods.isPasswordCorrect = async function (password) {
     try {
         return await bcrypt.compare(password, this.password);
     } catch (error) {
-        throw new Error(`Bcrypt comparing error: ${error.message}`);
+        throw new ApiError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "Unable to verify credentials at the moment. Please try again."
+        );
     }
 };
 

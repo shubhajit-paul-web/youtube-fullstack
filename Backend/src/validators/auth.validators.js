@@ -40,3 +40,9 @@ export const registerValidator = [
         )
         .trim(),
 ];
+
+// Login validator
+export const loginValidator = [
+    body("identifier").notEmpty().withMessage("Email or username is required").trim(),
+    body("password").notEmpty().withMessage("Password is required").trim(),
+];

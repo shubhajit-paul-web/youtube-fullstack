@@ -4,9 +4,11 @@ import { StatusCodes } from "http-status-codes";
 export async function errorHandler(err, req, res, next) {
     console.error("Error caught:", err);
 
-    res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+    const statusCode = err.StatusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+
+    res.status(statusCode).json({
         success: false,
+        statusCode,
         message: err.message || "Internal server error",
-        errors: err.errors || [],
     });
 }

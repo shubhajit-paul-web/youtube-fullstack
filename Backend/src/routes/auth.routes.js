@@ -1,8 +1,9 @@
 import { Router } from "express";
 import upload from "../middlewares/multer.middleware.js";
-import authControllers from "../controllers/auth.controller.js";
-import { registerValidator } from "../validators/auth.validators.js";
+import { registerUser, loginUser, logoutUser } from "../controllers/auth.controller.js";
+import { registerValidator, loginValidator } from "../validators/auth.validators.js";
 import { validateRequest } from "../middlewares/validator.middleware.js";
+import { authUser } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -15,7 +16,13 @@ router.post(
     ]),
     registerValidator,
     validateRequest,
-    authControllers.register
+    registerUser
 );
+
+// POST: /api/v1/auth/login
+router.post("/login", loginValidator, validateRequest, loginUser);
+
+// GET: /api/v1/auth/logout
+router.get("/logout", authUser, logoutUser);
 
 export default router;
