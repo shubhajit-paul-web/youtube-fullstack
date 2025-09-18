@@ -149,34 +149,29 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
 /**
  * (Refresh access token)
- * GET /api/v1/auth/refreshToken
+ * GET /api/v1/auth/refresh-token
  */
 export const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-    const ERROR_MESSAGES = {
-        UNAUTHORIZED: "Unauthorized request",
-        INVALID_TOKEN: "Invalid refresh token",
-        TOKEN_EXPIRED: "Token expired, please login again",
-    };
-
     if (!incomingRefreshToken) {
-        throw new ApiError(StatusCodes.UNAUTHORIZED, ERROR_MESSAGES.UNAUTHORIZED);
+        throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized request");
     }
 
     try {
         const decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-        const user = await User.find({
-            _id: decoded?._id,
-            refreshToken: incomingRefreshToken,
-        }).select("_id refreshToken");
+        const user = await User.findById(decoded?._id).select("_id refreshToken");
 
         if (!user) {
-            throw new ApiError(StatusCodes.UNAUTHORIZED, ERROR_MESSAGES.INVALID_TOKEN);
+            throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid refresh token");
         }
 
-        const accessToken = user.generateAccessToken();
+        if (incomingRefreshToken !== user.refreshToken) {
+            throw new ApiError(StatusCodes.UNAUTHORIZED, "Refresh token is expired or used");
+        }
+
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user?._id);
 
         const cookieOptions = {
             httpOnly: true,
@@ -186,10 +181,11 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
         return res
             .status(StatusCodes.OK)
             .cookie("accessToken", accessToken, cookieOptions)
-            .json(new ApiResponse(StatusCodes.OK, "Access token generated successfully"));
+            .cookie("refreshToken", refreshToken, cookieOptions)
+            .json(new ApiResponse(StatusCodes.OK, "Access token refreshed"));
     } catch (error) {
         if (error.name === "TokenExpiredError") {
-            throw new ApiError(StatusCodes.UNAUTHORIZED, ERROR_MESSAGES.TOKEN_EXPIRED);
+            throw new ApiError(StatusCodes.UNAUTHORIZED, "Token expired, please login again");
         }
 
         if (error.statusCode) {

@@ -1,6 +1,11 @@
 import { Router } from "express";
 import upload from "../middlewares/multer.middleware.js";
-import { registerUser, loginUser, logoutUser } from "../controllers/auth.controller.js";
+import {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+} from "../controllers/auth.controller.js";
 import { registerValidator, loginValidator } from "../validators/auth.validators.js";
 import { validateRequest } from "../middlewares/validator.middleware.js";
 import { authUser } from "../middlewares/auth.middleware.js";
@@ -24,5 +29,8 @@ router.post("/login", loginValidator, validateRequest, loginUser);
 
 // GET: /api/v1/auth/logout
 router.get("/logout", authUser, logoutUser);
+
+// GET: /api/v1/auth/refresh-token
+router.get("/refresh-token", refreshAccessToken);
 
 export default router;
