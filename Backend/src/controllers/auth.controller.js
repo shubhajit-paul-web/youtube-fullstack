@@ -5,6 +5,7 @@ import { uploadFile } from "../services/storage.service.js";
 import { StatusCodes } from "http-status-codes";
 import { toMilliseconds } from "../utils/toMilliseconds.js";
 import User from "../models/user.model.js";
+import jwt from "jsonwebtoken";
 
 // Generate access and refresh tokens
 async function generateAccessAndRefreshTokens(userId) {
@@ -36,7 +37,6 @@ async function generateAccessAndRefreshTokens(userId) {
  * Body: { username, email, fullName, password }
  * Files: { avatar, coverImage }
  */
-
 export const registerUser = asyncHandler(async (req, res) => {
     const { avatar, coverImage } = req.files;
     const { username, email, firstName, lastName, password } = req.body;
@@ -100,7 +100,6 @@ export const registerUser = asyncHandler(async (req, res) => {
  * POST /api/v1/auth/login
  * Body: { identifier - email or username, password }
  */
-
 export const loginUser = asyncHandler(async (req, res) => {
     const { identifier, password } = req.body;
 
@@ -137,11 +136,66 @@ export const loginUser = asyncHandler(async (req, res) => {
  * GET /api/v1/auth/logout
  */
 export const logoutUser = asyncHandler(async (req, res) => {
-    console.log(req.user);
+    await User.findByIdAndUpdate(req.user._id, {
+        $unset: { refreshToken: 1 },
+    });
 
     return res
         .status(StatusCodes.OK)
         .clearCookie("accessToken")
         .clearCookie("refreshToken")
         .json(new ApiResponse(StatusCodes.OK, "Logged out successfully"));
+});
+
+/**
+ * (Refresh access token)
+ * GET /api/v1/auth/refreshToken
+ */
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+    const ERROR_MESSAGES = {
+        UNAUTHORIZED: "Unauthorized request",
+        INVALID_TOKEN: "Invalid refresh token",
+        TOKEN_EXPIRED: "Token expired, please login again",
+    };
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(StatusCodes.UNAUTHORIZED, ERROR_MESSAGES.UNAUTHORIZED);
+    }
+
+    try {
+        const decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        const user = await User.find({
+            _id: decoded?._id,
+            refreshToken: incomingRefreshToken,
+        }).select("_id refreshToken");
+
+        if (!user) {
+            throw new ApiError(StatusCodes.UNAUTHORIZED, ERROR_MESSAGES.INVALID_TOKEN);
+        }
+
+        const accessToken = user.generateAccessToken();
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+        };
+
+        return res
+            .status(StatusCodes.OK)
+            .cookie("accessToken", accessToken, cookieOptions)
+            .json(new ApiResponse(StatusCodes.OK, "Access token generated successfully"));
+    } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            throw new ApiError(StatusCodes.UNAUTHORIZED, ERROR_MESSAGES.TOKEN_EXPIRED);
+        }
+
+        if (error.statusCode) {
+            throw new ApiError(error.statusCode, error.message);
+        }
+
+        throw new ApiError();
+    }
 });
