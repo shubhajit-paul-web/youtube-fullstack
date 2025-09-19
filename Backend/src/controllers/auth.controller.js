@@ -208,7 +208,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
 /**
  * (Change current password)
- * PATCH /api/v1/auth/change-password
+ * PATCH /api/v1/auth/reset-password
  * Body: { newPassword, confirmPassword }
  */
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
@@ -249,14 +249,4 @@ export const changeCurrentPassword = asyncHandler(async (req, res) => {
                 },
             })
         );
-});
-
-/**
- * (Get current user)
- * GET /api/v1/auth/user
- */
-export const getCurrentUser = asyncHandler((req, res) => {
-    return res
-        .status(StatusCodes.OK)
-        .json(new ApiResponse(StatusCodes.OK, "User profile fetched successfully", req.user));
 });

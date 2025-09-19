@@ -6,7 +6,6 @@ import {
     logoutUser,
     refreshAccessToken,
     changeCurrentPassword,
-    getCurrentUser,
 } from "../controllers/auth.controller.js";
 import {
     registerValidator,
@@ -39,16 +38,13 @@ router.get("/logout", authUser, logoutUser);
 // GET /api/v1/auth/refresh-token
 router.get("/refresh-token", refreshAccessToken);
 
-// PATCH /api/v1/auth/change-password
+// PATCH /api/v1/auth/reset-password
 router.patch(
-    "/change-password",
+    "/reset-password",
     authUser,
     changeCurrentPasswordValidator,
     validateRequest,
     changeCurrentPassword
 );
-
-// GET /api/v1/auth/user
-router.get("/user", authUser, getCurrentUser);
 
 export default router;

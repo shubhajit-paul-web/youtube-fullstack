@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -20,10 +21,11 @@ app.use(
 
 // Routes import
 import authRoutes from "./routes/auth.routes.js";
-import { errorHandler } from "./middlewares/error.middleware.js";
+import userRoutes from "./routes/user.routes.js";
 
 // Routes declaration
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 
 // Error-handling middleware
 app.use(errorHandler);
