@@ -46,3 +46,23 @@ export const loginValidator = [
     body("identifier").notEmpty().withMessage("Email or username is required").trim(),
     body("password").notEmpty().withMessage("Password is required").trim(),
 ];
+
+// Change current password validator
+export const changeCurrentPasswordValidator = [
+    body("newPassword")
+        .notEmpty()
+        .withMessage("New Password is required")
+        .isStrongPassword({ minSymbols: 0 })
+        .withMessage(
+            "Weak password: must be at least 8 chars, include uppercase, lowercase & number"
+        )
+        .trim(),
+    body("confirmPassword")
+        .notEmpty()
+        .withMessage("Confirm Password is required")
+        .isStrongPassword({ minSymbols: 0 })
+        .withMessage(
+            "Weak password: must be at least 8 chars, include uppercase, lowercase & number"
+        )
+        .trim(),
+];

@@ -3,7 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadFile } from "../services/storage.service.js";
 import { StatusCodes } from "http-status-codes";
-import { toMilliseconds } from "../utils/toMilliseconds.js";
+import { cookieOptions } from "../constants/constants.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
@@ -34,7 +34,7 @@ async function generateAccessAndRefreshTokens(userId) {
 /**
  * (Register user)
  * POST /api/v1/auth/register
- * Body: { username, email, fullName, password }
+ * Body: { username, email, firstName, lastName, password }
  * Files: { avatar, coverImage }
  */
 export const registerUser = asyncHandler(async (req, res) => {
@@ -79,20 +79,21 @@ export const registerUser = asyncHandler(async (req, res) => {
         );
     }
 
-    res.cookie("accessToken", createdUser.generateAccessToken(), {
-        httpOnly: true,
-        maxAge: toMilliseconds.days(1), // 1 day
-    });
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(createdUser?._id);
 
-    return res.status(StatusCodes.CREATED).json(
-        new ApiResponse(StatusCodes.CREATED, "User registered successfully", {
-            username: createdUser.username,
-            email: createdUser.email,
-            fullName: createdUser.fullName,
-            avatar: createdUser.avatar,
-            coverImage: createdUser?.coverImage,
-        })
-    );
+    return res
+        .status(StatusCodes.CREATED)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(
+            new ApiResponse(StatusCodes.CREATED, "User registered successfully", {
+                user: createdUser,
+                tokens: {
+                    accessToken,
+                    refreshToken,
+                },
+            })
+        );
 });
 
 /**
@@ -119,16 +120,19 @@ export const loginUser = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
 
-    const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-    };
-
     return res
         .status(StatusCodes.OK)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .json(new ApiResponse(StatusCodes.OK, "Logged In successfully", user));
+        .json(
+            new ApiResponse(StatusCodes.OK, "Logged In successfully", {
+                user,
+                tokens: {
+                    accessToken,
+                    refreshToken,
+                },
+            })
+        );
 });
 
 /**
@@ -173,19 +177,25 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
         const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user?._id);
 
-        const cookieOptions = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-        };
-
         return res
             .status(StatusCodes.OK)
             .cookie("accessToken", accessToken, cookieOptions)
             .cookie("refreshToken", refreshToken, cookieOptions)
-            .json(new ApiResponse(StatusCodes.OK, "Access token refreshed"));
+            .json(
+                new ApiResponse(StatusCodes.OK, "Access token refreshed", {
+                    tokens: {
+                        accessToken,
+                        refreshToken,
+                    },
+                })
+            );
     } catch (error) {
         if (error.name === "TokenExpiredError") {
-            throw new ApiError(StatusCodes.UNAUTHORIZED, "Token expired, please login again");
+            throw new ApiError(StatusCodes.UNAUTHORIZED, "Token has expired, please login again");
+        }
+
+        if (error.name === "JsonWebTokenError") {
+            throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
         }
 
         if (error.statusCode) {
@@ -194,4 +204,59 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
         throw new ApiError();
     }
+});
+
+/**
+ * (Change current password)
+ * PATCH /api/v1/auth/change-password
+ * Body: { newPassword, confirmPassword }
+ */
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+    const { newPassword, confirmPassword } = req.body;
+
+    if (newPassword !== confirmPassword) {
+        throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            "New password and confirm password do not match"
+        );
+    }
+
+    const user = await User.findById(userId);
+    const isPasswordCorrect = await user.isPasswordCorrect(newPassword);
+
+    if (isPasswordCorrect) {
+        throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            "New password cannot be the same as the current password."
+        );
+    }
+
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(userId);
+
+    return res
+        .status(StatusCodes.OK)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(
+            new ApiResponse(StatusCodes.OK, "Password updated successfully", {
+                tokens: {
+                    accessToken,
+                    refreshToken,
+                },
+            })
+        );
+});
+
+/**
+ * (Get current user)
+ * GET /api/v1/auth/user
+ */
+export const getCurrentUser = asyncHandler((req, res) => {
+    return res
+        .status(StatusCodes.OK)
+        .json(new ApiResponse(StatusCodes.OK, "User profile fetched successfully", req.user));
 });
