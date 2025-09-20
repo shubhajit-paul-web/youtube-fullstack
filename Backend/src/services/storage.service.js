@@ -10,7 +10,7 @@ const imagekit = new ImageKit({
 });
 
 export async function uploadFile(file) {
-    if (!file) return;
+    if (!file?.buffer) return;
 
     try {
         return await imagekit.upload({
