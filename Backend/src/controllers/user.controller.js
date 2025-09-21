@@ -3,7 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { StatusCodes } from "http-status-codes";
 import User from "../models/user.model.js";
-import { uploadFile } from "../services/storage.service.js";
+import { uploadFile, deleteFile } from "../services/storage.service.js";
 
 /**
  * (Get current user)
@@ -28,7 +28,7 @@ export const updateAccountDetails = asyncHandler(async (req, res) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "No valid fields to update");
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("firstName lastName email");
 
     if (!user) {
         throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
@@ -70,15 +70,12 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Avatar image upload failed. Please try again");
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                avatar: uploadedAvatar?.url,
-            },
-        },
-        { new: true }
-    ).lean();
+    const user = await User.findById(req.user?._id).select("-watchHistory");
+
+    if (user.avatar) deleteFile(user.avatar);
+
+    user.avatar = uploadedAvatar.url;
+    const updatedUser = await user.save({ validateBeforeSave: false });
 
     return res
         .status(StatusCodes.OK)
@@ -103,15 +100,12 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Cover image upload failed. Please try again");
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                coverImage: uploadedCoverImage?.url,
-            },
-        },
-        { new: true }
-    ).lean();
+    const user = await User.findById(req.user?._id).select("-watchHistory");
+
+    if (user.coverImage) deleteFile(user.coverImage);
+
+    user.coverImage = uploadedCoverImage.url;
+    const updatedUser = await user.save({ validateBeforeSave: false });
 
     return res
         .status(StatusCodes.OK)
