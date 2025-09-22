@@ -111,3 +111,71 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
         .status(StatusCodes.OK)
         .json(new ApiResponse(StatusCodes.OK, "Cover image updated successfully", updatedUser));
 });
+
+/**
+ * (Get user channel profile)
+ * PATCH /api/v1/users/:username
+ */
+export const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+
+    if (!username?.trim()) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Username is required");
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username: username?.trim()?.toLowerCase(),
+            },
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers",
+            },
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo",
+            },
+        },
+        {
+            $project: {
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscribersCount: {
+                    $size: "$subscribers",
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo",
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {
+                            $in: [req.user?._id, "$subscribers.subscriber"],
+                        },
+                        then: true,
+                        else: false,
+                    },
+                },
+                createdAt: 1,
+            },
+        },
+    ]);
+
+    if (!channel?.length) {
+        throw new ApiError(StatusCodes.NOT_FOUND, "Channel not found");
+    }
+
+    return res
+        .status(StatusCodes.OK)
+        .json(new ApiResponse(StatusCodes.OK, "Channel fetched successfully", channel[0]));
+});
