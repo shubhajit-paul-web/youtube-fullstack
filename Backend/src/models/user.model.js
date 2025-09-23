@@ -13,6 +13,8 @@ const userSchema = new Schema(
             trim: true,
             index: true,
             immutable: true,
+            minLength: 5,
+            maxLength: 25,
             required: true,
         },
         email: {
