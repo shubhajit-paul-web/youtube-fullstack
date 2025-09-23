@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { StatusCodes } from "http-status-codes";
 import User from "../models/user.model.js";
 import { uploadFile, deleteFile } from "../services/storage.service.js";
+import mongoose from "mongoose";
 
 /**
  * (Get current user)
@@ -114,7 +115,7 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 /**
  * (Get user channel profile)
- * PATCH /api/v1/users/:username
+ * GET /api/v1/users/:username
  */
 export const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username } = req.params;
@@ -178,4 +179,64 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
     return res
         .status(StatusCodes.OK)
         .json(new ApiResponse(StatusCodes.OK, "Channel fetched successfully", channel[0]));
+});
+
+/**
+ * (Get user watch history)
+ * GET /api/v1/users/me/watch-history
+ */
+export const getWatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user?._id),
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+
+                            pipeline: [
+                                {
+                                    $project: {
+                                        username: 1,
+                                        fullName: 1,
+                                        avatar: 1,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner",
+                            },
+                        },
+                    },
+                ],
+            },
+        },
+    ]);
+
+    return res
+        .status(StatusCodes.OK)
+        .json(
+            new ApiResponse(
+                StatusCodes.OK,
+                "Watch history fetched successfully",
+                user[0].watchHistory
+            )
+        );
 });

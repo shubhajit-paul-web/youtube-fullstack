@@ -5,6 +5,8 @@ import {
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory,
 } from "../controllers/user.controller.js";
 import { updateAccountDetailsValidator } from "../validators/user.validators.js";
 import { validateRequest } from "../middlewares/validator.middleware.js";
@@ -26,5 +28,11 @@ router.patch("/me/avatar", upload.single("avatar"), updateUserAvatar);
 
 // PATCH /api/v1/users/me/cover-image
 router.patch("/me/cover-image", upload.single("coverImage"), updateUserCoverImage);
+
+// GET /api/v1/users/:username
+router.get("/:username", getUserChannelProfile);
+
+// GET /api/v1/users/me/watch-history
+router.get("/me/watch-history", getWatchHistory);
 
 export default router;

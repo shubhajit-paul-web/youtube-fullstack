@@ -31,6 +31,7 @@ const userSchema = new Schema(
             lastName: {
                 type: String,
                 trim: true,
+                default: "",
             },
         },
         avatar: {
