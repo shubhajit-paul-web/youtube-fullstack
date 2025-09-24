@@ -2,15 +2,18 @@ import { Schema, model } from "mongoose";
 
 const commentSchema = new Schema(
     {
-        content: {
-            type: String,
-            maxLength: 150,
-            trim: true,
-            required: true,
-        },
         video: {
             type: Schema.Types.ObjectId,
             ref: "Video",
+        },
+        tweet: {
+            type: Schema.Types.ObjectId,
+            ref: "Tweet",
+        },
+        content: {
+            type: String,
+            maxLength: 100,
+            trim: true,
             required: true,
         },
         owner: {
