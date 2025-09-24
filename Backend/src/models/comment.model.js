@@ -1,4 +1,6 @@
 import { Schema, model } from "mongoose";
+import { ApiError } from "../utils/ApiError";
+import { StatusCodes } from "http-status-codes";
 
 const commentSchema = new Schema(
     {
@@ -12,7 +14,7 @@ const commentSchema = new Schema(
         },
         content: {
             type: String,
-            maxLength: 100,
+            maxLength: 250,
             trim: true,
             required: true,
         },
@@ -26,6 +28,17 @@ const commentSchema = new Schema(
         timestamps: true,
     }
 );
+
+commentSchema.pre("save", async function (next) {
+    if (this.content?.length > 250) {
+        throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            "Maximum comment length exceeded: limit is 250 characters"
+        );
+    }
+
+    next();
+});
 
 const Comment = model("Comment", commentSchema);
 export default Comment;

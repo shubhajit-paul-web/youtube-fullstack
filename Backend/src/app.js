@@ -23,11 +23,13 @@ app.use(
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import likeRoutes from "./routes/like.route.js";
+import commentRoutes from "./routes/comment.routes.js";
 
 // Routes declaration
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/likes", likeRoutes);
+app.use("/api/v1/comments", commentRoutes);
 
 // Error-handling middleware
 app.use(errorHandler);
