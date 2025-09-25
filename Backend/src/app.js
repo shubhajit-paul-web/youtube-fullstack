@@ -24,12 +24,14 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import likeRoutes from "./routes/like.route.js";
 import commentRoutes from "./routes/comment.routes.js";
+import subscriptionRoutes from "./routes/subscription.routes.js";
 
 // Routes declaration
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/likes", likeRoutes);
 app.use("/api/v1/comments", commentRoutes);
+app.use("/api/v1/subscriptions", subscriptionRoutes);
 
 // Error-handling middleware
 app.use(errorHandler);

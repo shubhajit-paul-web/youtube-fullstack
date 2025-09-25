@@ -132,6 +132,7 @@ export const updateComment = asyncHandler(async (req, res) => {
         },
         {
             new: true,
+            runValidators: true,
         }
     ).lean();
 
