@@ -23,3 +23,5 @@ router.post("/toggle/t/:tweetId", toggleTweetLike);
 
 // GET /api/v1/likes/videos
 router.get("/videos", getLikedVideos);
+
+export default router;

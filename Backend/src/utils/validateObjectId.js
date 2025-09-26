@@ -1,10 +1,8 @@
 import { isValidObjectId } from "mongoose";
-import { ApiError } from "./ApiError.js";
-import { StatusCodes } from "http-status-codes";
 
-export function validateObjectId(id, fieldName = "ID") {
+export function validateObjectId(id, fieldName = "") {
     if (!isValidObjectId(id)) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, `${fieldName} is not a valid ObjectId`);
+        throw new Error(`${fieldName} ID is not valid`);
     }
 
     return true;

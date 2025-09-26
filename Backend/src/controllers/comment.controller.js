@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Comment from "../models/comment.model.js";
+import { PaginationResponse } from "../utils/PaginationResponse.js";
 
 /**
  * Get comments for a video/tweet
@@ -11,6 +12,7 @@ import Comment from "../models/comment.model.js";
  */
 export const getComments = asyncHandler(async (req, res) => {
     const { targetType, targetId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
     if (!["video", "tweet"].includes(targetType)) {
         throw new ApiError(
@@ -19,21 +21,7 @@ export const getComments = asyncHandler(async (req, res) => {
         );
     }
 
-    const page = parseInt(req.query?.page) || 1;
-    const limit = parseInt(req.query?.limit) || 10;
-
     const skip = (page - 1) * limit;
-
-    if (page < 1) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Page number must be greater than 0");
-    }
-
-    if (limit > 50) {
-        throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            "Maximum allowed limit is 50 items per request"
-        );
-    }
 
     const [comments, totalComments] = await Promise.all([
         Comment.find({ [targetType]: targetId })
@@ -45,26 +33,18 @@ export const getComments = asyncHandler(async (req, res) => {
                 select: "username fullName avatar",
             })
             .lean(),
-        Comment.find({ [targetType]: targetId }).countDocuments(),
+        Comment.countDocuments({ [targetType]: targetId }),
     ]);
 
-    const totalPages = Math.ceil(totalComments / limit);
-
-    return res.status(StatusCodes.OK).json(
-        new ApiResponse(StatusCodes.OK, "Comments fetched successfully", {
-            pagination: {
-                currentPage: page,
-                limit: limit,
-                totalPages,
-                totalComments,
-                hasNextPage: page < totalPages,
-                hasPrevPage: page > 1,
-                nextPage: page < totalPages ? ++page : null,
-                prevPage: page > 1 ? --page : null,
-            },
-            comments,
-        })
-    );
+    return res
+        .status(StatusCodes.OK)
+        .json(
+            new ApiResponse(
+                StatusCodes.OK,
+                "Comments fetched successfully",
+                new PaginationResponse(totalComments, comments, page, limit)
+            )
+        );
 });
 
 /**
@@ -75,23 +55,11 @@ export const getComments = asyncHandler(async (req, res) => {
  */
 export const createComment = asyncHandler(async (req, res) => {
     const { targetType, targetId } = req.params;
-
-    if (!["video", "tweet"].includes(targetType)) {
-        throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            "Bad request: targetType must be either 'video' or 'tweet'"
-        );
-    }
-
-    const content = req.body?.content;
-
-    if (!content?.trim()) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Comment content cannot be empty");
-    }
+    const content = req.body.content;
 
     const createdComment = await Comment.create({
         [targetType]: targetId,
-        content: String(content)?.trim(),
+        content,
         owner: req.user?._id,
     });
 
@@ -114,11 +82,7 @@ export const createComment = asyncHandler(async (req, res) => {
  */
 export const updateComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
-    const content = req.body?.content;
-
-    if (!content?.trim()) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Comment content cannot be empty");
-    }
+    const content = req.body.content;
 
     const updatedComment = await Comment.findOneAndUpdate(
         {
@@ -126,9 +90,7 @@ export const updateComment = asyncHandler(async (req, res) => {
             owner: req.user?._id,
         },
         {
-            $set: {
-                content: String(content)?.trim(),
-            },
+            $set: { content },
         },
         {
             new: true,

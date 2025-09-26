@@ -5,7 +5,7 @@ import {
     createTweet,
     updateTweet,
     deleteTweet,
-} from "../controllers/tweet.controller";
+} from "../controllers/tweet.controller.js";
 
 const router = Router();
 
