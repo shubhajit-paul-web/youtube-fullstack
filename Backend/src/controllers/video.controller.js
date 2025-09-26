@@ -7,6 +7,7 @@ import User from "../models/user.model.js";
 import { PaginationResponse } from "../utils/PaginationResponse.js";
 import { uploadFile } from "../services/storage.service.js";
 import { checkFileType } from "../utils/checkFileType.js";
+import { validateObjectId } from "../utils/validateObjectId.js";
 
 /**
  * Get all videos
@@ -26,6 +27,8 @@ export const getAllVideos = asyncHandler(async (req, res) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Channel ID is required");
     }
 
+    validateObjectId(channelId, "Channel");
+
     const hasChannel = await User.findById(channelId).select("username").lean();
 
     if (!hasChannel) {
@@ -34,15 +37,18 @@ export const getAllVideos = asyncHandler(async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+    // filter
+    const videoQuery = {
+        owner: channelId,
+        isPublished: true,
+    };
+
+    if (query) {
+        videoQuery.title = { $regex: query, $options: "i" };
+    }
+
     const [videos, totalVideos] = await Promise.all([
-        Video.find({
-            owner: channelId,
-            title: {
-                $regex: query || "",
-                $options: "i",
-            },
-            isPublished: true,
-        })
+        Video.find(videoQuery)
             .select("_id videoFile thumbnail title duration views createdAt")
             .sort({ [sortBy]: sortType === "asc" ? 1 : -1 })
             .skip(skip)
