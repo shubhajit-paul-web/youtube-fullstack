@@ -26,6 +26,7 @@ import likeRoutes from "./routes/like.route.js";
 import commentRoutes from "./routes/comment.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
 import tweetRoutes from "./routes/tweet.routes.js";
+import videoRoutes from "./routes/video.routes.js";
 
 // Routes declaration
 app.use("/api/v1/auth", authRoutes);
@@ -34,6 +35,7 @@ app.use("/api/v1/likes", likeRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/tweets", tweetRoutes);
+app.use("/api/v1/videos", videoRoutes);
 
 // Error-handling middleware
 app.use(errorHandler);

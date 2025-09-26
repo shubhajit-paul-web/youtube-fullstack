@@ -10,14 +10,14 @@ const imagekit = new ImageKit({
 });
 
 // Upload file
-export async function uploadFile(file) {
+export async function uploadFile(file, folder = "images") {
     if (!file?.buffer) return;
 
     try {
         return await imagekit.upload({
             file: file.buffer,
             fileName: uuidv4(),
-            folder: "youtube",
+            folder: `youtube/${folder}`,
         });
     } catch (error) {
         throw new ApiError(StatusCodes.CONFLICT, `Imagekit file uploading error: ${error.message}`);
