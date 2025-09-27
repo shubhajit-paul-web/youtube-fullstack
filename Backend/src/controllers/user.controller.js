@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import User from "../models/user.model.js";
 import { uploadFile, deleteFile } from "../services/storage.service.js";
 import mongoose from "mongoose";
+import { checkFileType } from "../utils/checkFileType.js";
 
 /**
  * (Get current user)
@@ -65,7 +66,9 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Avatar file is required");
     }
 
-    const uploadedAvatar = await uploadFile(avatar);
+    checkFileType(avatar, "image", "Please upload a valid image for the Avatar");
+
+    const uploadedAvatar = await uploadFile(avatar, "avatars");
 
     if (!uploadedAvatar?.url) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Avatar image upload failed. Please try again");
@@ -73,7 +76,8 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
 
     const user = await User.findById(req.user?._id).select("-watchHistory");
 
-    if (user.avatar) deleteFile(user.avatar);
+    // Delete the old avatar image from ImageKit
+    if (user.avatar) deleteFile(user.avatar, "avatars");
 
     user.avatar = uploadedAvatar.url;
     const updatedUser = await user.save({ validateBeforeSave: false });
@@ -95,7 +99,9 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Cover image is required");
     }
 
-    const uploadedCoverImage = await uploadFile(coverImage);
+    checkFileType(coverImage, "image", "Please upload a valid Cover Image");
+
+    const uploadedCoverImage = await uploadFile(coverImage, "covers");
 
     if (!uploadedCoverImage?.url) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Cover image upload failed. Please try again");
@@ -103,7 +109,8 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
 
     const user = await User.findById(req.user?._id).select("-watchHistory");
 
-    if (user.coverImage) deleteFile(user.coverImage);
+    // Delete the old cover image from ImageKit
+    if (user.coverImage) deleteFile(user.coverImage, "covers");
 
     user.coverImage = uploadedCoverImage.url;
     const updatedUser = await user.save({ validateBeforeSave: false });

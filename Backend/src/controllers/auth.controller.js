@@ -6,6 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import { cookieOptions } from "../constants/constants.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import { checkFileType } from "../utils/checkFileType.js";
 
 // Generate access and refresh tokens
 async function generateAccessAndRefreshTokens(userId) {
@@ -43,6 +44,12 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     if (!avatar) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Avatar file is required");
+    }
+
+    checkFileType(avatar, "image", "Please upload a valid image for the Avatar");
+
+    if (coverImage) {
+        checkFileType(coverImage, "image", "Please upload a valid Cover Image");
     }
 
     // Check user is already exists or not
