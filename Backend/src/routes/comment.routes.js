@@ -4,6 +4,7 @@ import { paginationValidator } from "../validators/pagination.validators.js";
 import {
     createCommentValidator,
     updateCommentValidator,
+    getCommentsValidator,
 } from "../validators/comment.validators.js";
 import { validateRequest } from "../middlewares/validator.middleware.js";
 import {
@@ -19,7 +20,13 @@ const router = Router();
 router.use(authUser);
 
 // GET /api/v1/comments/:targetType/:targetId?page=1&limit=10
-router.get("/:targetType/:targetId", paginationValidator, validateRequest, getComments);
+router.get(
+    "/:targetType/:targetId",
+    getCommentsValidator,
+    paginationValidator,
+    validateRequest,
+    getComments
+);
 
 // POST /api/v1/comments/:targetType/:targetId
 router.post("/:targetType/:targetId", createCommentValidator, validateRequest, createComment);

@@ -25,3 +25,11 @@ export const updateCommentValidator = [
         .notEmpty()
         .withMessage("Comment content cannot be empty"),
 ];
+
+// Get comments validator
+export const getCommentsValidator = [
+    param("targetType")
+        .isIn(["video", "tweet"])
+        .withMessage("Bad request: targetType must be either 'video' or 'tweet'"),
+    param("targetId").custom((value) => validateObjectId(value, "Target")),
+];

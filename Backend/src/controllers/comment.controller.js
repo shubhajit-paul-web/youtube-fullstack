@@ -4,6 +4,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Comment from "../models/comment.model.js";
 import { PaginationResponse } from "../utils/PaginationResponse.js";
+import Video from "../models/video.model.js";
+import Tweet from "../models/tweet.model.js";
 
 /**
  * Get comments for a video/tweet
@@ -14,14 +16,22 @@ export const getComments = asyncHandler(async (req, res) => {
     const { targetType, targetId } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
-    if (!["video", "tweet"].includes(targetType)) {
-        throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            "Bad request: targetType must be either 'video' or 'tweet'"
-        );
-    }
-
     const skip = (page - 1) * limit;
+
+    // Checks video/tweet is exists or not
+    if (targetType === "video") {
+        const isVideoExists = await Video.exists({ _id: targetId });
+
+        if (!isVideoExists) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Video not found");
+        }
+    } else {
+        const isTweetExists = await Tweet.exists({ _id: targetId });
+
+        if (!isTweetExists) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Tweet not found");
+        }
+    }
 
     const [comments, totalComments] = await Promise.all([
         Comment.find({ [targetType]: targetId })
