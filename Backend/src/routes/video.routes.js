@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { authUser } from "../middlewares/auth.middleware.js";
-import { getAllVideos, getVideoById, publishAVideo } from "../controllers/video.controller.js";
-import { publishAVideoValidator } from "../validators/video.validators.js";
+import {
+    getAllVideos,
+    getVideoById,
+    publishAVideo,
+    updateVideo,
+} from "../controllers/video.controller.js";
+import { publishAVideoValidator, updateVideoValidator } from "../validators/video.validators.js";
 import { validateRequest } from "../middlewares/validator.middleware.js";
 import upload from "../middlewares/multer.middleware.js";
 
@@ -26,6 +31,15 @@ router.post(
     publishAVideoValidator,
     validateRequest,
     publishAVideo
+);
+
+// PATCH /api/v1/videos/:id
+router.patch(
+    "/:id",
+    upload.single("thumbnail"),
+    updateVideoValidator,
+    validateRequest,
+    updateVideo
 );
 
 export default router;

@@ -25,8 +25,8 @@ export async function uploadFile(file, folder = "images") {
 }
 
 // Get file id by URL
-async function getFileIdByUrl(url = "") {
-    const urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT + "/youtube/";
+async function getFileIdByUrl(url = "", path = "") {
+    const urlEndpoint = `${process.env.IMAGEKIT_URL_ENDPOINT}/youtube/${path}/`;
 
     if (typeof url !== "string" && !url.startsWith(urlEndpoint)) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid file URL");
@@ -55,8 +55,8 @@ async function getFileIdByUrl(url = "") {
 }
 
 // Delete file
-export async function deleteFile(url = "") {
-    const fileId = await getFileIdByUrl(url);
+export async function deleteFile(url = "", folderName = "") {
+    const fileId = await getFileIdByUrl(url, folderName);
 
     if (!fileId) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "File id not found");

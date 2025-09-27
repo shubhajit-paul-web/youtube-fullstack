@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Video from "../models/video.model.js";
 import User from "../models/user.model.js";
 import { PaginationResponse } from "../utils/PaginationResponse.js";
-import { uploadFile } from "../services/storage.service.js";
+import { deleteFile, uploadFile } from "../services/storage.service.js";
 import { checkFileType } from "../utils/checkFileType.js";
 import { validateObjectId } from "../utils/validateObjectId.js";
 
@@ -143,4 +143,64 @@ export const publishAVideo = asyncHandler(async (req, res) => {
     return res
         .status(StatusCodes.CREATED)
         .json(new ApiResponse(StatusCodes.CREATED, "Video published successfully", publishedVideo));
+});
+
+/**
+ * Update a video
+ * PATCH /api/v1/videos/:id
+ */
+export const updateVideo = asyncHandler(async (req, res) => {
+    const user = req.user;
+    const { id } = req.params;
+    const { title, description } = req.body || {};
+    const thumbnail = req.file;
+
+    if (!title && !description && !thumbnail) {
+        throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            "Please provide something to update — a title, description, or thumbnail"
+        );
+    }
+
+    const video = await Video.findOne({
+        _id: id,
+        owner: user._id,
+    });
+
+    if (!video) {
+        throw new ApiError(StatusCodes.NOT_FOUND, "Video not found or you don't have access to it");
+    }
+
+    // Update video details (title, description, thumbnail)
+    if (title) video.title = title;
+    if (description) video.description = description;
+    if (thumbnail) {
+        checkFileType(thumbnail, "image", "Please upload a valid image for the thumbnail");
+
+        const uploadedThumbnail = await uploadFile(thumbnail, "thumbnails");
+
+        if (!uploadedThumbnail?.url) {
+            throw new ApiError(
+                StatusCodes.BAD_REQUEST,
+                "Failed to upload thumbnail image. Please try again"
+            );
+        }
+
+        // Delete the old thumbnail image from ImageKit
+        deleteFile(video.thumbnail, "thumbnails");
+
+        video.thumbnail = uploadedThumbnail.url;
+    }
+
+    const updatedVideo = (await video.save()).toJSON();
+
+    updatedVideo.owner = {
+        username: user.username,
+        fullName: user.fullName,
+        avatar: user.avatar,
+    };
+
+    return res
+        .status(StatusCodes.OK)
+        .json(new ApiResponse(StatusCodes.OK, "Video updated successfully", updatedVideo));
 });
