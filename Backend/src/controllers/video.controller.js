@@ -75,10 +75,19 @@ export const getAllVideos = asyncHandler(async (req, res) => {
 export const getVideoById = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const video = await Video.findOne({
-        _id: id,
-        isPublished: true,
-    })
+    const video = await Video.findOneAndUpdate(
+        {
+            _id: id,
+            isPublished: true,
+        },
+        {
+            $inc: { views: 1 },
+        },
+        {
+            new: true,
+            runValidators: false,
+        }
+    )
         .select("-__v -updatedAt")
         .populate({
             path: "owner",
@@ -203,4 +212,53 @@ export const updateVideo = asyncHandler(async (req, res) => {
     return res
         .status(StatusCodes.OK)
         .json(new ApiResponse(StatusCodes.OK, "Video updated successfully", updatedVideo));
+});
+
+/**
+ * Delete a video
+ * DELETE /api/v1/videos/:id
+ */
+export const deleteVideo = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    validateObjectId(id, "Video");
+
+    const isVideoDeleted = await Video.findOneAndDelete({
+        _id: id,
+        owner: req.user?._id,
+    }).lean();
+
+    if (!isVideoDeleted) {
+        throw new ApiError(StatusCodes.NOT_FOUND, "Video not found or you don't have access to it");
+    }
+
+    return res
+        .status(StatusCodes.OK)
+        .json(new ApiResponse(StatusCodes.OK, "Video deleted successfully"));
+});
+
+/**
+ * Toggle public status
+ * PATCH /api/v1/videos/:id/status
+ */
+export const togglePublicStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    validateObjectId(id, "Video");
+
+    const video = await Video.findOne({
+        _id: id,
+        owner: req.user?._id,
+    }).select("-owner -__v");
+
+    if (!video) {
+        throw new ApiError(StatusCodes.NOT_FOUND, "Video not found or you don't have access to it");
+    }
+
+    video.isPublished = !video.isPublished;
+    const updatedVideo = await video.save({ validateBeforeSave: false });
+
+    return res
+        .status(StatusCodes.OK)
+        .json(new ApiResponse(StatusCodes.OK, "Video status changed successfully", updatedVideo));
 });

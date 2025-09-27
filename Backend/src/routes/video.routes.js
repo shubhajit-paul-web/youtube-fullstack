@@ -5,6 +5,8 @@ import {
     getVideoById,
     publishAVideo,
     updateVideo,
+    deleteVideo,
+    togglePublicStatus,
 } from "../controllers/video.controller.js";
 import { publishAVideoValidator, updateVideoValidator } from "../validators/video.validators.js";
 import { validateRequest } from "../middlewares/validator.middleware.js";
@@ -41,5 +43,11 @@ router.patch(
     validateRequest,
     updateVideo
 );
+
+// DELETE /api/v1/videos/:id
+router.delete("/:id", deleteVideo);
+
+// PATCH /api/v1/videos/:id/status
+router.patch("/:id/status", togglePublicStatus);
 
 export default router;

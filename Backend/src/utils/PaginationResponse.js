@@ -26,10 +26,3 @@ export class PaginationResponse {
         this.data = currentData;
     }
 }
-
-/**
- * current page = 5
- * total pages = 10
- * nextPage = 6
- * prevPage = 5
- */
